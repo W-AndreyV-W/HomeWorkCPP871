@@ -17,7 +17,9 @@ public:
 
     explicit GraphicWindows(QWidget *parent = nullptr);
     ~GraphicWindows();
-    QCustomPlot* get_customPlot();
+
+    void printGraphicWindows(const QVector<double>& graphic_x, const QVector<double>& graphic_y);
+    void clearGraphicWindows();
 
 private slots:
 
@@ -26,6 +28,8 @@ private slots:
 private:
 
     Ui::GraphicWindows *ui;
+
+    QCPGraph* graph;
 };
 
 #endif // GRAPHICWINDOWS_H

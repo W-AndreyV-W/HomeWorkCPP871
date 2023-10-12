@@ -18,65 +18,70 @@ MainWindow::~MainWindow() {
         customPlot->close();
     }
 
-    delete ui;
     delete customPlot;
-    delete graph;
+    delete ui;
 }
 
 QVector<uint32_t> MainWindow::ReadFile(QString path, uint8_t numberChannel) {
-
-    QFile file(path);
-    file.open(QIODevice::ReadOnly);
-
-    if(file.isOpen() == false) {
-
-        QMessageBox mb;
-        mb.setWindowTitle("Ошибка");
-        mb.setText("Ошибка открытия фала");
-        mb.exec();
-    }
-
-    QDataStream dataStream;
-    dataStream.setDevice(&file);
-    dataStream.setByteOrder(QDataStream::LittleEndian);
 
     QVector<uint32_t> readData;
     uint32_t currentWorld = 0;
     uint32_t sizeFrame = 0;
 
+    QDataStream dataStream;
+    QFile file(path);
+
     readData.clear();
 
-    while(dataStream.atEnd() == false) {
+    if(file.open(QIODevice::ReadOnly)) {
 
-        dataStream >> currentWorld;
+        dataStream.setDevice(&file);
+        dataStream.setByteOrder(QDataStream::LittleEndian);
 
-        if(currentWorld == 0xFFFFFFFF) {
+        while(dataStream.atEnd() == false) {
 
             dataStream >> currentWorld;
 
-            if(currentWorld < 0x80000000) {
+            if(currentWorld == 0xFFFFFFFF) {
 
-                dataStream >> sizeFrame;
+                dataStream >> currentWorld;
 
-                if(sizeFrame > 1500) {
+                if(currentWorld < 0x80000000) {
 
-                    continue;
-                }
+                    dataStream >> sizeFrame;
 
-                for(int i = 0; i < sizeFrame / sizeof(uint32_t); i++) {
+                    if(sizeFrame > 1500) {
 
-                    dataStream >> currentWorld;
+                        continue;
+                    }
 
-                    if((currentWorld >> 24) == numberChannel) {
+                    for(int i = 0; i < sizeFrame / sizeof(uint32_t); i++) {
 
-                        readData.append(currentWorld);
+                        dataStream >> currentWorld;
+
+                        if((currentWorld >> 24) == numberChannel) {
+
+                            readData.append(currentWorld);
+                        }
                     }
                 }
             }
         }
-    }
 
-    ui->chB_readSucces->setChecked(true);
+        file.close();
+
+        ui->chB_readSucces->setChecked(true);
+    }
+    else {
+
+        QMessageBox mb;
+
+        mb.setWindowTitle("Ошибка");
+        mb.setText("Ошибка открытия фала");
+        mb.exec();
+
+        exit;
+    }
 
     return readData;
 }
@@ -105,8 +110,8 @@ QVector<double> MainWindow::ProcessFile(const QVector<uint32_t> dataFile) {
     return resultData;
 }
 
-QVector<double> MainWindow::FindMax(QVector<double> resultData)
-{
+QVector<double> MainWindow::FindMax(QVector<double> resultData) {
+
     double max = 0;
     double sMax=0;
 
@@ -189,6 +194,7 @@ void MainWindow::on_pb_start_clicked() {
     if(pathToFile.isEmpty()) {
 
         QMessageBox mb;
+
         mb.setWindowTitle("Ошибка");
         mb.setText("Выберите файл!");
         mb.exec();
@@ -259,25 +265,14 @@ void MainWindow::printGraphic() {
     if(customPlot == nullptr) {
 
         customPlot = new GraphicWindows;
-        graph = new QCPGraph(customPlot->get_customPlot()->xAxis,customPlot->get_customPlot()->yAxis);
-
-        customPlot->get_customPlot()->setInteraction(QCP::iRangeZoom, true);
-        customPlot->get_customPlot()->setInteraction(QCP::iRangeDrag, true);
     }
     else {
 
-        for(int i = 0; i < customPlot->get_customPlot()->graphCount(); i++) {
-
-            customPlot->get_customPlot()->graph(i)->data()->clear();
-        }
+        customPlot->clearGraphicWindows();
     }
 
-    graph->addData(graphic_x, graphic_y);
-
+    customPlot->printGraphicWindows(graphic_x, graphic_y);
     customPlot->show();
-
-    customPlot->get_customPlot()->rescaleAxes();
-    customPlot->get_customPlot()->replot();
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
@@ -292,7 +287,11 @@ void MainWindow::closeEvent(QCloseEvent *event) {
     }
     else {
 
-        MainWindow::~MainWindow();
+        if(customPlot != nullptr) {
+
+            customPlot->close();
+        }
+
         event->accept();
     }
 }

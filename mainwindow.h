@@ -5,17 +5,16 @@
 #include <QFileDialog>
 #include <QDataStream>
 #include <QMessageBox>
-#include <QtGlobal>
+//#include <QtGlobal>
 #include <QtConcurrent>
 #include <algorithm>
 #include <QCloseEvent>
 
-#include <QLineSeries>
-#include <QtCharts>
-#include <QChartView>
+//#include <QLineSeries>
+//#include <QtCharts>
+//#include <QChartView>
 
 #include "graphicwindows.h"
-#include "qcustomplot.h"
 
 
 #define FD 1000.0 //частота дискретизации
@@ -54,8 +53,6 @@ private:
     Ui::MainWindow *ui;
 
     GraphicWindows* customPlot = nullptr;
-    QCPGraph* graph;
-
 
     QString pathToFile = "";
     uint8_t numberSelectChannel = 0xEA;
